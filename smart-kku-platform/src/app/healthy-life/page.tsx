@@ -1,0 +1,189 @@
+// src/app/healthy-life/page.tsx
+"use client";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+
+export default function HealthyLifePage() {
+  const { user } = useAuth();
+  const [workouts, setWorkouts] = useState<any[]>([]);
+  const [sportTypes, setSportTypes] = useState<any[]>([]);
+  const [seasons, setSeasons] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+
+  const [form, setForm] = useState({
+    sportTypeCode: "RUNNING",
+    calories: 300,
+    durationSec: 1800,
+    distanceKm: 5,
+    source: "MANUAL",
+    specialEventMultiplier: 1,
+    durationMultiplierPercent: 100,
+  });
+  const [msg, setMsg] = useState("");
+
+  const load = async () => {
+    const st = await api("/api/sport-types");
+    setSportTypes(st);
+    const s = await api("/api/seasons");
+    setSeasons(s);
+    if (user) {
+      const w = await api("/api/workouts");
+      setWorkouts(w);
+    }
+    const u = await api("/api/users");
+    setUsers(u);
+    // leaderboard by power
+    const lb = [...u].sort((a, b) => (b.power || 0) - (a.power || 0)).slice(0, 10);
+    setLeaderboard(lb);
+  };
+  useEffect(() => { load(); }, [user]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const sport = sportTypes.find((s) => s.code === form.sportTypeCode);
+      const res = await api("/api/workouts", {
+        method: "POST",
+        body: JSON.stringify({
+          sportTypeCode: form.sportTypeCode,
+          sportTypeId: sport?.id,
+          calories: Number(form.calories),
+          durationSec: Number(form.durationSec),
+          distanceKm: Number(form.distanceKm),
+          source: form.source,
+          specialEventMultiplier: Number(form.specialEventMultiplier),
+          durationMultiplierPercent: Number(form.durationMultiplierPercent),
+        }),
+      });
+      setMsg(`ส่งผลสำเร็จ · POWER ที่ได้: ${res.score} (factor ${res.sportFactorUsed})${res.validationReason ? " · " + res.validationReason : ""}`);
+      await load();
+    } catch (e: any) {
+      setMsg(e.message);
+    }
+  };
+
+  const totalCalories = workouts.reduce((s, w) => s + w.calories, 0);
+  const totalDuration = workouts.reduce((s, w) => s + w.durationSec, 0);
+  const totalDistance = workouts.reduce((s, w) => s + (w.distanceKm || 0), 0);
+  const totalPower = workouts.reduce((s, w) => s + (w.score || 0), 0);
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">KKU Healthy Life</h1>
+
+      {user && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white p-4 rounded border"><div className="text-xs text-gray-500">Calories รวม</div><div className="text-xl font-bold">{totalCalories}</div></div>
+          <div className="bg-white p-4 rounded border"><div className="text-xs text-gray-500">ระยะเวลา (นาที)</div><div className="text-xl font-bold">{Math.round(totalDuration / 60)}</div></div>
+          <div className="bg-white p-4 rounded border"><div className="text-xs text-gray-500">ระยะทาง (km)</div><div className="text-xl font-bold">{totalDistance.toFixed(1)}</div></div>
+          <div className="bg-white p-4 rounded border"><div className="text-xs text-gray-500">POWER รวม</div><div className="text-xl font-bold text-green-700">{totalPower.toFixed(2)}</div></div>
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="bg-white p-5 rounded border space-y-3">
+          <h2 className="font-semibold">ส่งผลการออกกำลังกาย</h2>
+          {!user && <p className="text-sm text-gray-500">กรุณาเข้าสู่ระบบ</p>}
+          {user && (
+            <form onSubmit={submit} className="space-y-3">
+              <div>
+                <label className="text-sm">ประเภทกีฬา</label>
+                <select value={form.sportTypeCode} onChange={(e) => setForm({ ...form, sportTypeCode: e.target.value })} className="border px-3 py-2 rounded w-full">
+                  {sportTypes.map((s) => <option key={s.code} value={s.code}>{s.name} (factor {s.factor})</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm">Calories</label>
+                  <input type="number" value={form.calories} onChange={(e) => setForm({ ...form, calories: +e.target.value })} className="border px-3 py-2 rounded w-full" />
+                </div>
+                <div>
+                  <label className="text-sm">ระยะเวลา (วินาที)</label>
+                  <input type="number" value={form.durationSec} onChange={(e) => setForm({ ...form, durationSec: +e.target.value })} className="border px-3 py-2 rounded w-full" />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm">ระยะทาง (km)</label>
+                <input type="number" step="0.1" value={form.distanceKm} onChange={(e) => setForm({ ...form, distanceKm: +e.target.value })} className="border px-3 py-2 rounded w-full" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm">Special Event Multiplier</label>
+                  <input type="number" step="0.1" value={form.specialEventMultiplier} onChange={(e) => setForm({ ...form, specialEventMultiplier: +e.target.value })} className="border px-3 py-2 rounded w-full" />
+                </div>
+                <div>
+                  <label className="text-sm">Duration Multiplier (%)</label>
+                  <input type="number" value={form.durationMultiplierPercent} onChange={(e) => setForm({ ...form, durationMultiplierPercent: +e.target.value })} className="border px-3 py-2 rounded w-full" />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm">แหล่งที่มา</label>
+                <select value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} className="border px-3 py-2 rounded w-full">
+                  <option value="MANUAL">กรอกเอง</option>
+                  <option value="STRAVA">Strava</option>
+                  <option value="GARMIN">Garmin</option>
+                  <option value="SMARTWATCH">Smartwatch</option>
+                </select>
+              </div>
+              <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">ส่งผล</button>
+            </form>
+          )}
+          {msg && <div className="p-3 bg-green-50 border border-green-200 rounded text-sm">{msg}</div>}
+          <div className="text-xs text-gray-500">
+            สูตร: Points = (Calories / Duration(sec)) × Sport Factor × Special Event × Duration Multiplier(%) × 100
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded border space-y-3">
+          <h2 className="font-semibold">Leaderboard (POWER)</h2>
+          <div className="space-y-1">
+            {leaderboard.map((u, i) => (
+              <div key={u.id} className="flex justify-between text-sm border-b py-1">
+                <span>{i + 1}. {u.displayName}</span>
+                <span className="font-mono">{(u.power || 0).toFixed(2)} POWER</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {user && (
+        <div className="bg-white p-5 rounded border space-y-3">
+          <h2 className="font-semibold">ประวัติการออกกำลังกาย</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead><tr className="border-b text-left"><th>วันที่</th><th>กีฬา</th><th>Calories</th><th>ระยะเวลา</th><th>ระยะทาง</th><th>Pace</th><th>Factor</th><th>POWER</th><th>สถานะ</th></tr></thead>
+              <tbody>
+                {workouts.map((w) => (
+                  <tr key={w.id} className="border-b">
+                    <td>{new Date(w.performedAt).toLocaleDateString("th-TH")}</td>
+                    <td>{w.sportType}</td>
+                    <td>{w.calories}</td>
+                    <td>{Math.round(w.durationSec / 60)} นาที</td>
+                    <td>{w.distanceKm}</td>
+                    <td>{w.paceMinPerKm ? w.paceMinPerKm.toFixed(2) : "-"}</td>
+                    <td>{w.sportFactorUsed}</td>
+                    <td className="text-green-700 font-mono">{w.score}</td>
+                    <td>{w.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white p-5 rounded border space-y-2">
+        <h2 className="font-semibold">Seasons</h2>
+        {seasons.map((s) => (
+          <div key={s.id} className="text-sm border-b py-2">
+            <div className="font-medium">{s.name}</div>
+            <div className="text-xs text-gray-500">{s.description} · {s.startDate} - {s.endDate} · {s.isActive ? "เปิดใช้งาน" : "ปิด"}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
