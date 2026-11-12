@@ -20,59 +20,94 @@ export default function WalletPage() {
   const convert = async () => {
     try {
       const r = await api("/api/wallet/convert", { method: "POST", body: JSON.stringify({ power: convertAmt }) });
-      setMsg(`แปลงสำเร็จ ใช้ POWER ${r.powerUsed} ได้ EXP ${r.expGained} (rate ${r.rate}:1) · POWER เหลือ ${r.remainingPower}`);
+      setMsg(`แปลงสำเร็จ: ใช้ POWER ${r.powerUsed} → ได้ EXP ${r.expGained} (rate ${r.rate}:1) · POWER เหลือ ${r.remainingPower}`);
       await load();
       await refresh();
     } catch (e: any) { setMsg(e.message); }
   };
 
-  if (!user) return <div>กรุณาเข้าสู่ระบบ</div>;
-  if (!data) return <div>กำลังโหลด...</div>;
+  if (!user) return <div className="text-center py-12 text-slate-500">กรุณาเข้าสู่ระบบ</div>;
+  if (!data) return <div className="text-center py-12 text-slate-500">กำลังโหลด...</div>;
 
   const u = data.user;
-  const rate = data ? 10 : 10;
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">กระเป๋าคะแนน</h1>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white p-4 rounded border"><div className="text-xs text-gray-500">POINT</div><div className="text-2xl font-bold text-yellow-600">{u.points}</div></div>
-        <div className="bg-white p-4 rounded border"><div className="text-xs text-gray-500">POWER</div><div className="text-2xl font-bold text-green-600">{typeof u.power === "number" ? u.power.toFixed(2) : u.power}</div></div>
-        <div className="bg-white p-4 rounded border"><div className="text-xs text-gray-500">EXP</div><div className="text-2xl font-bold text-purple-600">{u.exp}</div></div>
-        <div className="bg-white p-4 rounded border"><div className="text-xs text-gray-500">Level</div><div className="text-2xl font-bold text-blue-600">{u.levelName}</div></div>
-      </div>
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold text-slate-800">กระเป๋าคะแนน</h1>
 
-      <div className="bg-white p-5 rounded border space-y-3">
-        <h2 className="font-semibold">แปลง POWER เป็น EXP</h2>
-        <div className="text-sm text-gray-500">อัตรา: {rate} POWER = 1 EXP (Super Admin กำหนด) · EXP ต้องเป็นจำนวนเต็ม · POWER เศษคงเหลือ</div>
-        <div className="flex gap-2">
-          <input type="number" value={convertAmt} onChange={(e) => setConvertAmt(+e.target.value)} className="border px-3 py-2 rounded" placeholder="จำนวน POWER" />
-          <button onClick={convert} className="px-4 py-2 bg-purple-600 text-white rounded">แปลง</button>
+      {/* Score cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-4 text-white shadow-sm">
+          <div className="text-xs opacity-80">POINT</div>
+          <div className="text-3xl font-bold mt-1">{u.points}</div>
         </div>
-        {msg && <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">{msg}</div>}
+        <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl p-4 text-white shadow-sm">
+          <div className="text-xs opacity-80">POWER</div>
+          <div className="text-3xl font-bold mt-1">{typeof u.power === "number" ? u.power.toFixed(0) : u.power}</div>
+        </div>
+        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-4 text-white shadow-sm">
+          <div className="text-xs opacity-80">EXP</div>
+          <div className="text-3xl font-bold mt-1">{u.exp}</div>
+        </div>
+        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-4 text-white shadow-sm">
+          <div className="text-xs opacity-80">LEVEL</div>
+          <div className="text-2xl font-bold mt-1">{u.levelName}</div>
+        </div>
       </div>
 
-      <div className="bg-white p-5 rounded border space-y-3 text-center">
-        <h2 className="font-semibold">QR Code ของฉัน (สำหรับเช็กอินกิจกรรม)</h2>
+      {/* Personal QR */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 text-center space-y-3">
+        <h2 className="font-bold text-slate-800">QR Code ของฉัน</h2>
+        <p className="text-xs text-slate-500">ให้ Staff สแกนเพื่อเช็กอินกิจกรรม</p>
         <div className="flex justify-center">
-          <QRCode value={u.id} size={180} />
+          <div className="p-3 bg-white rounded-xl border border-slate-200 inline-block">
+            <QRCode value={u.id} size={160} />
+          </div>
         </div>
-        <div className="text-xs text-gray-500 font-mono break-all">{u.id}</div>
-        <div className="text-xs text-gray-500">ให้ Staff สแกน QR นี้เพื่อเช็กอินกิจกรรม</div>
+        <div className="text-[10px] text-slate-400 font-mono break-all">{u.id}</div>
       </div>
 
-      <div className="bg-white p-5 rounded border space-y-2">
-        <h2 className="font-semibold">ประวัติธุรกรรม</h2>
-        <div className="overflow-x-auto">
+      {/* Convert */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3">
+        <h2 className="font-bold text-slate-800">แปลง POWER เป็น EXP</h2>
+        <p className="text-xs text-slate-500">อัตรา: 10 POWER = 1 EXP · EXP ต้องเป็นจำนวนเต็ม · POWER เศษคงเหลือ</p>
+        <div className="flex gap-2">
+          <input type="number" value={convertAmt} onChange={(e) => setConvertAmt(+e.target.value)} className="flex-1 border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="จำนวน POWER" />
+          <button onClick={convert} className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium shadow-sm hover:shadow-md transition btn-press">
+            แปลง
+          </button>
+        </div>
+        {msg && <div className="text-sm p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-700">{msg}</div>}
+      </div>
+
+      {/* Transaction history */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3">
+        <h2 className="font-bold text-slate-800">ประวัติธุรกรรม</h2>
+        <div className="overflow-x-auto -mx-5 px-5">
           <table className="w-full text-sm">
-            <thead><tr className="border-b text-left"><th>วันที่</th><th>ประเภท</th><th>จำนวน</th><th>ยอดหลัง</th><th>เหตุผล</th></tr></thead>
+            <thead>
+              <tr className="border-b border-slate-100 text-left text-slate-500">
+                <th className="py-2 pr-3 font-medium">วันที่</th>
+                <th className="py-2 pr-3 font-medium">ประเภท</th>
+                <th className="py-2 pr-3 font-medium">จำนวน</th>
+                <th className="py-2 pr-3 font-medium">ยอดหลัง</th>
+                <th className="py-2 font-medium">เหตุผล</th>
+              </tr>
+            </thead>
             <tbody>
               {data.transactions.map((t: any) => (
-                <tr key={t.id} className="border-b">
-                  <td>{new Date(t.createdAt).toLocaleString()}</td>
-                  <td>{t.type}</td>
-                  <td className={t.amount >= 0 ? "text-green-600" : "text-red-600"}>{t.amount >= 0 ? "+" : ""}{typeof t.amount === "number" ? t.amount.toFixed(2) : t.amount}</td>
-                  <td>{typeof t.balanceAfter === "number" ? t.balanceAfter.toFixed(2) : t.balanceAfter}</td>
-                  <td>{t.reason}</td>
+                <tr key={t.id} className="border-b border-slate-50">
+                  <td className="py-2 pr-3 text-xs text-slate-500">{new Date(t.createdAt).toLocaleDateString()}</td>
+                  <td className="py-2 pr-3">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      t.type === "POINT" ? "bg-amber-100 text-amber-700" :
+                      t.type === "POWER" ? "bg-emerald-100 text-emerald-700" :
+                      "bg-violet-100 text-violet-700"
+                    }`}>{t.type}</span>
+                  </td>
+                  <td className={`py-2 pr-3 font-medium ${t.amount >= 0 ? "text-emerald-600" : "text-red-500"}`}>{t.amount >= 0 ? "+" : ""}{typeof t.amount === "number" ? t.amount.toFixed(2) : t.amount}</td>
+                  <td className="py-2 pr-3 text-slate-600">{typeof t.balanceAfter === "number" ? t.balanceAfter.toFixed(2) : t.balanceAfter}</td>
+                  <td className="py-2 text-xs text-slate-500">{t.reason}</td>
                 </tr>
               ))}
             </tbody>
