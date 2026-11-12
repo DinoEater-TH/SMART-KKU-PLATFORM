@@ -53,7 +53,7 @@ export default function HealthyLifePage() {
           sportTypeCode: form.sportTypeCode,
           sportTypeId: sport?.id,
           calories: Number(form.calories),
-          durationSec: Number(form.durationSec),
+          durationSec: Number(form.durationSec) * 60,
           distanceKm: Number(form.distanceKm),
           source: form.source,
           specialEventMultiplier: Number(form.specialEventMultiplier),
@@ -85,6 +85,18 @@ export default function HealthyLifePage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">KKU Healthy Life</h1>
 
+      {seasons.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 space-y-2">
+          <h2 className="font-bold text-slate-800 text-sm">Seasons</h2>
+          {seasons.map((s) => (
+            <div key={s.id} className="text-sm">
+              <div className="font-medium text-slate-700">{s.name}</div>
+              <div className="text-xs text-slate-500">{s.description} · {s.startDate} - {s.endDate} · {s.isActive ? "เปิดใช้งาน" : "ปิด"}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {user && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white p-4 rounded border"><div className="text-xs text-gray-500">Calories รวม</div><div className="text-xl font-bold">{totalCalories}</div></div>
@@ -112,7 +124,7 @@ export default function HealthyLifePage() {
                   <input type="number" value={form.calories} onChange={(e) => setForm({ ...form, calories: +e.target.value })} className="border px-3 py-2 rounded w-full" />
                 </div>
                 <div>
-                  <label className="text-sm">ระยะเวลา (วินาที)</label>
+                  <label className="text-sm">ระยะเวลา (นาที)</label>
                   <input type="number" value={form.durationSec} onChange={(e) => setForm({ ...form, durationSec: +e.target.value })} className="border px-3 py-2 rounded w-full" />
                 </div>
               </div>
@@ -180,7 +192,7 @@ export default function HealthyLifePage() {
           <h2 className="font-semibold">ประวัติการออกกำลังกาย</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead><tr className="border-b text-left"><th>วันที่</th><th>กีฬา</th><th>Calories</th><th>ระยะเวลา</th><th>ระยะทาง</th><th>Pace</th><th>Factor</th><th>POWER</th><th>สถานะ</th></tr></thead>
+              <thead><tr className="border-b text-left"><th>วันที่</th><th>กีฬา</th><th>Calories</th><th>ระยะเวลา</th><th>Pace</th><th>Factor</th><th>POWER</th><th>สถานะ</th></tr></thead>
               <tbody>
                 {workouts.map((w) => (
                   <tr key={w.id} className="border-b">
@@ -188,7 +200,6 @@ export default function HealthyLifePage() {
                     <td>{w.sportType}</td>
                     <td>{w.calories}</td>
                     <td>{Math.round(w.durationSec / 60)} นาที</td>
-                    <td>{w.distanceKm}</td>
                     <td>{w.paceMinPerKm ? w.paceMinPerKm.toFixed(2) : "-"}</td>
                     <td>{w.sportFactorUsed}</td>
                     <td className="text-green-700 font-mono">{w.score}</td>
@@ -201,15 +212,7 @@ export default function HealthyLifePage() {
         </div>
       )}
 
-      <div className="bg-white p-5 rounded border space-y-2">
-        <h2 className="font-semibold">Seasons</h2>
-        {seasons.map((s) => (
-          <div key={s.id} className="text-sm border-b py-2">
-            <div className="font-medium">{s.name}</div>
-            <div className="text-xs text-gray-500">{s.description} · {s.startDate} - {s.endDate} · {s.isActive ? "เปิดใช้งาน" : "ปิด"}</div>
-          </div>
-        ))}
-      </div>
+      {/* Seasons moved to top */}
     </div>
   );
 }

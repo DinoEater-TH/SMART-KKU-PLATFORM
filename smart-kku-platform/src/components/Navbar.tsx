@@ -8,12 +8,22 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [notifCount, setNotifCount] = useState(0);
 
-  const links = [
+  const isMerchant = user?.role === "MERCHANT";
+
+  // Menus visible to non-merchant users
+  const userLinks = [
     { href: "/", label: "หน้าหลัก", icon: "🏠" },
     { href: "/activities", label: "กิจกรรม", icon: "📅" },
     { href: "/healthy-life", label: "สุขภาพ", icon: "💪" },
     { href: "/marketplace", label: "รางวัล", icon: "🎁" },
   ];
+
+  // Merchant only sees merchant home
+  const merchantLinks = [
+    { href: "/merchant", label: "หน้าร้าน", icon: "🏪" },
+  ];
+
+  const links = isMerchant ? merchantLinks : userLinks;
 
   useEffect(() => {
     if (!user) return;
@@ -35,22 +45,25 @@ export default function Navbar() {
     <>
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href={isMerchant ? "/merchant" : "/"} className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center text-white font-bold text-sm">S</div>
             <span className="font-bold text-lg text-slate-800 hidden sm:block">Smart KKU</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            {[...links, { href: "/community", label: "ชุมชน", icon: "👥" }, { href: "/certificates", label: "ใบประกาศ", icon: "📜" }].map((l) => (
+            {links.map((l) => (
               <Link key={l.href} href={l.href} className="px-3 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition">
                 {l.label}
               </Link>
             ))}
+            {!isMerchant && (
+              <>
+                <Link href="/community" className="px-3 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition">ชุมชน</Link>
+                <Link href="/certificates" className="px-3 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition">ใบประกาศ</Link>
+              </>
+            )}
             {user && ["SUPER_ADMIN", "DEPARTMENT_ADMIN"].includes(user.role) && (
               <Link href="/admin" className="px-3 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition">ผู้ดูแล</Link>
-            )}
-            {user && user.role === "MERCHANT" && (
-              <Link href="/merchant" className="px-3 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition">Merchant</Link>
             )}
           </nav>
 
@@ -92,10 +105,12 @@ export default function Navbar() {
             <span className="text-[10px] font-medium">{l.label}</span>
           </Link>
         ))}
-        <Link href="/community" className="flex flex-col items-center gap-0.5 px-2 py-1 text-slate-500 hover:text-blue-600 transition min-w-[56px]">
-          <span className="text-xl">👥</span>
-          <span className="text-[10px] font-medium">ชุมชน</span>
-        </Link>
+        {!isMerchant && (
+          <Link href="/community" className="flex flex-col items-center gap-0.5 px-2 py-1 text-slate-500 hover:text-blue-600 transition min-w-[56px]">
+            <span className="text-xl">👥</span>
+            <span className="text-[10px] font-medium">ชุมชน</span>
+          </Link>
+        )}
       </nav>
 
       {open && (
