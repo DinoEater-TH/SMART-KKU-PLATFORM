@@ -1,22 +1,32 @@
 // src/app/api/attendance/route.ts
 import { NextResponse } from "next/server";
-import { getDb, writeDb, uid, now } from "@/lib/db";
+import { getDb, writeDb, uid, now, audit } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { recomputeUserLevel } from "@/lib/levels";
+import type { Activity, Db, User } from "@/lib/types";
 
+/**
+ * QR check-in (staff scans a player's personal QR ticket) + separate PIN verification.
+ *
+ * step = "CHECK_IN"  -> identify the player and record arrival
+ *        "PIN"       -> player enters the activity PIN to receive POINT/EXP/Certificate
+ */
 export async function GET(req: Request) {
   const user = await getCurrentUser(req);
   if (!user) return NextResponse.json({ error: "unauth" }, { status: 401 });
   const db = await getDb();
   const url = new URL(req.url);
   const activityId = url.searchParams.get("activityId");
-  let list = db.attendance;
-  if (activityId) {
-    const regs = db.registrations.filter((r) => r.activityId === activityId).map((r) => r.id);
-    list = list.filter((a) => regs.includes(a.registrationId));
-  }
+  const userId = url.searchParams.get("userId");
+
+  let list = db.attendance.slice();
+  if (activityId) list = list.filter((a) => a.activityId === activityId);
+  if (userId) list = list.filter((a) => a.userId === userId);
+
   const enriched = list.map((a) => ({
     ...a,
     user: db.users.find((u) => u.id === a.userId),
+    activity: db.activities.find((x) => x.id === a.activityId),
   }));
   return NextResponse.json(enriched);
 }
@@ -26,99 +36,122 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "unauth" }, { status: 401 });
   const db = await getDb();
   const body = await req.json();
-  const { activityId, method, passcode, sessionId, lat, lng } = body;
+  const step = body.step || "CHECK_IN";
 
-  const reg = db.registrations.find((r) => r.activityId === activityId && r.userId === user.id && r.status === "REGISTERED");
-  if (!reg) return NextResponse.json({ error: "ยังไม่ได้ลงทะเบียน" }, { status: 400 });
-
-  const activity = db.activities.find((a) => a.id === activityId);
-  if (!activity) return NextResponse.json({ error: "activity not found" }, { status: 404 });
-
-  // duplicate check-in
-  const existing = db.attendance.find((a) => a.registrationId === reg.id && a.attendanceStatus === "CHECKED_IN");
-  if (existing) return NextResponse.json({ error: "เช็กอินแล้ว" }, { status: 400 });
-
-  let verified = false;
-  let verifiedBy: string | undefined;
-
-  if (method === "DIRECT") {
-    verified = true;
-  } else if (method === "QR_PASSCODE") {
-    if (!passcode) return NextResponse.json({ error: "กรุณากรอกรหัส" }, { status: 400 });
-    const pc = db.passcodes.find((p) => p.activityId === activityId && p.code === passcode);
-    if (!pc) return NextResponse.json({ error: "รหัสไม่ถูกต้อง" }, { status: 400 });
-    if (new Date(pc.expiresAt) < new Date()) return NextResponse.json({ error: "รหัสหมดอายุ" }, { status: 400 });
-    verified = true;
-    verifiedBy = pc.createdBy;
-  } else if (method === "GEO_FENCE") {
-    // mock: accept if lat/lng provided
-    if (lat === undefined || lng === undefined) return NextResponse.json({ error: "ไม่สามารถระบุตำแหน่ง" }, { status: 400 });
-    verified = true;
-  }
-
-  if (!verified) return NextResponse.json({ error: "ตรวจสอบไม่ผ่าน" }, { status: 400 });
-
-  const rec = {
-    id: uid(),
-    registrationId: reg.id,
-    sessionId: sessionId || undefined,
-    userId: user.id,
-    attendanceStatus: "CHECKED_IN" as const,
-    verificationMethod: method,
-    verifiedAt: now(),
-    verifiedBy: verifiedBy || user.id,
-    createdAt: now(),
-  };
-  db.attendance.push(rec as any);
-
-  // Grant rewards if activity has rewards and attendance checked in
-  // For DIRECT / check-in completion, grant point/exp/qualification
-  grantRewards(db, user.id, activity);
-
-  writeDb(db);
-  return NextResponse.json({ success: true, record: rec });
+  if (step === "CHECK_IN") return checkIn(req, db, user, body);
+  return verifyPin(db, user, body);
 }
 
-function grantRewards(db: any, userId: string, activity: any) {
-  const user = db.users.find((u: any) => u.id === userId);
-  if (!user) return;
-  if (activity.pointReward && activity.pointReward > 0) {
-    user.points += activity.pointReward;
-    db.walletTx.push({ id: uid(), userId, type: "POINT", amount: activity.pointReward, balanceAfter: user.points, reason: `Activity: ${activity.name}`, sourceType: "ACTIVITY", sourceId: activity.id, createdAt: now() });
+/** Staff (or admin) scans a registration ticket -> record CHECKED_IN. */
+function checkIn(_req: Request, db: Db, actor: User, body: any) {
+  const { registrationId, qrToken, activityId } = body;
+
+  let reg = registrationId
+    ? db.registrations.find((r) => r.id === registrationId)
+    : undefined;
+
+  // A personal QR ticket encodes the registration id.
+  if (!reg && qrToken) {
+    reg = db.registrations.find((r) => r.id === qrToken);
   }
-  if (activity.expReward && activity.expReward > 0) {
-    user.exp += activity.expReward;
-    user.levelName = levelName(user.exp);
-    db.walletTx.push({ id: uid(), userId, type: "EXP", amount: activity.expReward, balanceAfter: user.exp, reason: `Activity: ${activity.name}`, sourceType: "ACTIVITY", sourceId: activity.id, createdAt: now() });
+  if (!reg && activityId && actor.role !== "MERCHANT") {
+    reg = db.registrations.find(
+      (r) => r.activityId === activityId && r.userId === body.playerId && r.status !== "CANCELLED"
+    );
   }
-  if (activity.qualificationReward) {
-    db.qualifications.push({ id: uid(), userId, key: activity.qualificationReward, sourceActivityId: activity.id, sourceName: activity.name, grantedAt: now(), status: "ACTIVE" });
+  if (!reg) return NextResponse.json({ error: "Registration not found for this ticket" }, { status: 404 });
+  if (reg.status === "CANCELLED") return NextResponse.json({ error: "Registration was cancelled" }, { status: 400 });
+
+  const activity = db.activities.find((a) => a.id === reg!.activityId);
+  if (!activity) return NextResponse.json({ error: "Activity not found" }, { status: 404 });
+
+  const existing = db.attendance.find((a) => a.registrationId === reg!.id);
+  if (existing?.checkedInAt) {
+    return NextResponse.json({ error: "Already checked in", duplicate: true, record: existing }, { status: 409 });
+  }
+
+  const rec: any = existing || {
+    id: uid(),
+    registrationId: reg.id,
+    sessionId: body.sessionId,
+    userId: reg.userId,
+    activityId: reg.activityId,
+    attendanceStatus: "CHECKED_IN" as const,
+    verificationMethod: "QR",
+    createdAt: now(),
+  };
+  rec.attendanceStatus = "CHECKED_IN";
+  rec.checkedInAt = now();
+  rec.checkedInBy = actor.id;
+  if (!existing) db.attendance.push(rec);
+
+  const player = db.users.find((u) => u.id === reg!.userId);
+  audit(db, actor.id, "CHECK_IN", "Attendance", rec.id, `${player?.displayName} -> ${activity.name}`);
+  writeDb(db);
+  return NextResponse.json({ success: true, record: rec, player, activity });
+}
+
+/** Player enters the activity PIN to unlock rewards. Staff may verify on a player's behalf. */
+function verifyPin(db: Db, actor: User, body: any) {
+  const { activityId, pin, userId } = body;
+  const targetUserId = userId || actor.id;
+  const activity = db.activities.find((a) => a.id === activityId);
+  if (!activity) return NextResponse.json({ error: "Activity not found" }, { status: 404 });
+  if (!activity.pinCode) return NextResponse.json({ error: "This activity has no PIN configured" }, { status: 400 });
+  if (activity.status !== "OPEN") return NextResponse.json({ error: "Activity is not open" }, { status: 400 });
+  if (String(pin) !== String(activity.pinCode)) return NextResponse.json({ error: "Incorrect PIN" }, { status: 400 });
+
+  const reg = db.registrations.find(
+    (r) => r.activityId === activityId && r.userId === targetUserId && r.status !== "CANCELLED"
+  );
+  if (!reg) return NextResponse.json({ error: "You are not registered for this activity" }, { status: 400 });
+
+  const rec = db.attendance.find((a) => a.registrationId === reg.id);
+  if (!rec?.checkedInAt) return NextResponse.json({ error: "Please check in with your QR code first" }, { status: 400 });
+  if (rec.pinVerifiedAt) return NextResponse.json({ error: "PIN already verified", duplicate: true }, { status: 409 });
+
+  rec.attendanceStatus = "PIN_VERIFIED";
+  rec.pinVerifiedAt = now();
+
+  const player = db.users.find((u) => u.id === targetUserId);
+  if (!player) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+  grantPlayerRewards(db, player, activity, reg.id);
+  writeDb(db);
+  return NextResponse.json({ success: true, record: rec, player, activity });
+}
+
+function grantPlayerRewards(db: Db, player: User, activity: Activity, sourceId: string) {
+  let changed = false;
+  if (activity.pointReward > 0) {
+    player.points += activity.pointReward;
+    db.walletTx.push({ id: uid(), userId: player.id, type: "POINT", amount: activity.pointReward, balanceAfter: player.points, reason: `Activity: ${activity.name}`, sourceType: "ACTIVITY", sourceId, createdAt: now() });
+    changed = true;
+  }
+  if (activity.expReward > 0) {
+    player.exp += activity.expReward;
+    db.walletTx.push({ id: uid(), userId: player.id, type: "EXP", amount: activity.expReward, balanceAfter: player.exp, reason: `Activity: ${activity.name}`, sourceType: "ACTIVITY", sourceId, createdAt: now() });
+    changed = true;
+  }
+  if (changed) {
+    const lv = recomputeUserLevel(db.levels, player);
+    player.levelId = lv.levelId;
+    player.levelName = lv.levelName;
   }
   if (activity.hasCertificate) {
     db.certificates.push({
       id: uid(),
-      userId,
-      userName: user.displayName,
+      userId: player.id,
+      userName: player.displayName,
       activityId: activity.id,
       activityName: activity.name,
       orgName: activity.orgName,
-      templateVersion: "v1",
-      certificateNo: "CERT-" + Math.floor(Math.random() * 100000),
+      templateVersion: activity.certificateTemplate || "v1",
+      certificateNo: "CERT-" + new Date().getFullYear() + "-" + Math.floor(100000 + Math.random() * 900000),
       issuedAt: now(),
       status: "ISSUED",
     });
   }
-  // mark registration completed
-  const reg = db.registrations.find((r: any) => r.activityId === activity.id && r.userId === userId && r.status === "REGISTERED");
+  const reg = db.registrations.find((r) => r.id === sourceId);
   if (reg) reg.status = "COMPLETED";
-}
-
-function levelName(exp: number) {
-  if (exp >= 10000) return "Legend";
-  if (exp >= 7000) return "Master";
-  if (exp >= 4000) return "Extra";
-  if (exp >= 2000) return "Expert";
-  if (exp >= 1000) return "Active";
-  if (exp >= 500) return "Explorer";
-  return "Beginner";
 }

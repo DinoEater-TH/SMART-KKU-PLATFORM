@@ -58,12 +58,12 @@ export default function CommunityPage() {
         {communities.map((c) => {
           const isMember = c.members?.some((m: any) => m.userId === user?.id && m.status === "ACTIVE");
           return (
-            <div key={c.id} className="bg-white p-5 rounded border space-y-3">
+            <div key={c.id} className={`bg-white p-5 rounded border space-y-3 ${c.status === "DISSOLVED" ? "opacity-60" : ""}`}>
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-semibold text-lg">{c.name}</h3>
                   <p className="text-sm text-gray-600">{c.description}</p>
-                  <div className="text-xs text-gray-500 mt-1">เจ้าของ: {c.ownerName} · สมาชิก: {c.memberCount} · Group Power: {c.groupPower}</div>
+                  <div className="text-xs text-gray-500 mt-1">เจ้าของ: {c.ownerName} · สมาชิก: {c.memberCount} · Group Power: {c.groupPower} {c.status === "DISSOLVED" && <span className="text-red-600">· DISSOLVED: {c.dissolvedReason}</span>}</div>
                 </div>
                 {user && (
                   <div>

@@ -45,7 +45,7 @@ export default function MarketplacePage() {
               {r.powerCost > 0 && <span className="text-green-700">POWER {r.powerCost}</span>}
               {r.expCost > 0 && <span className="text-purple-700">EXP {r.expCost}</span>}
             </div>
-            <div className="text-xs">คงเหลือ: {r.stock} · {r.status}</div>
+            <div className="text-xs">คงเหลือ: {r.stock}/{r.stockTotal} · {r.status} · {r.rewardType}</div>
             {r.eligibilityRules?.length > 0 && <div className="text-xs text-orange-600">เงื่อนไข: {r.eligibilityRules.join(", ")}</div>}
             {user && r.status === "ACTIVE" && r.stock > 0 && (
               <button onClick={() => redeem(r.id)} className="w-full px-3 py-1 bg-blue-600 text-white rounded text-sm">แลกรางวัล</button>

@@ -11,14 +11,16 @@ const DATA_FILE = path.join(process.cwd(), "data", "db.json");
 function emptyDb(): Db {
   return {
     users: [],
+    levels: [],
     organizations: [],
     projects: [],
     activities: [],
     sessions: [],
+    staffAssignments: [],
     registrations: [],
     attendance: [],
     walletTx: [],
-    qualifications: [],
+    conversions: [],
     workouts: [],
     sportTypes: [],
     scoringRules: [],
@@ -31,16 +33,13 @@ function emptyDb(): Db {
     communityMembers: [],
     communityPosts: [],
     certificates: [],
+    quizzes: [],
+    quizAnswers: [],
     notifications: [],
     auditLogs: [],
-    passcodes: [],
-    referralCampaigns: [],
-    referralRecords: [],
     systemSettings: {},
   };
-}
-
-export function readDb(): Db {
+}export function readDb(): Db {
   try {
     if (!fs.existsSync(DATA_FILE)) return emptyDb();
     const raw = fs.readFileSync(DATA_FILE, "utf8");

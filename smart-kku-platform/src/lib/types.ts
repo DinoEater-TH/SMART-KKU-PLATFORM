@@ -6,21 +6,33 @@ export type RoleCode = "USER" | "STAFF" | "DEPARTMENT_ADMIN" | "SUPER_ADMIN" | "
 export interface User {
   id: UUID;
   email: string;
+  phone?: string;
   displayName: string;
+  avatarUrl?: string;
   status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
   role: RoleCode;
   personnelCode?: string;
   titleName?: string;
   firstName?: string;
   lastName?: string;
-  personnelType?: "ACADEMIC" | "SUPPORT" | "OTHER";
+  personnelType?: "ACADEMIC" | "SUPPORT";
   orgId?: UUID;
   orgName?: string;
   exp: number;
+  levelId?: UUID;
   levelName: string;
   points: number;
   power: number;
   createdAt: string;
+}
+
+export interface Level {
+  id: UUID;
+  name: string;
+  minExp: number;
+  maxExp: number | null;
+  description?: string;
+  order: number;
 }
 
 export interface Organization {
@@ -54,19 +66,42 @@ export interface Activity {
   code: string;
   name: string;
   description: string;
+  location?: string;
+  bannerUrl?: string;
   activityType: string;
+  startAt?: string;
+  endAt?: string;
   registrationStartAt?: string;
   registrationEndAt?: string;
   capacity: number; // 0 = unlimited
-  verificationMethod: "DIRECT" | "GEO_FENCE" | "QR_PASSCODE";
-  status: "DRAFT" | "OPEN" | "CLOSED" | "COMPLETED";
+  verificationMethod: "QR_PIN" | "DIRECT" | "GEO_FENCE";
+  status: "DRAFT" | "OPEN" | "CLOSED" | "COMPLETED" | "CANCELLED";
   pointReward: number;
   expReward: number;
-  powerReward?: number;
-  qualificationReward?: string;
+  staffMultiplier: number;
+  pinCode?: string;
+  pinMode?: "SHARED" | "PER_USER";
+  pinActive?: boolean;
+  allowInvite: boolean;
+  prerequisiteActivityId?: UUID;
   hasCertificate: boolean;
+  certificateTemplate?: string;
   eligiblePersonnelTypes?: string[];
-  minExp?: number;
+}
+
+export interface StaffAssignment {
+  id: UUID;
+  activityId: UUID;
+  userId: UUID;
+  assignedBy: UUID;
+  assignedAt: string;
+  revokedAt?: string;
+  revokedBy?: UUID;
+  isActive: boolean;
+  // settlement
+  settledAt?: string;
+  pointAwarded?: number;
+  expAwarded?: number;
 }
 
 export interface ActivitySession {
@@ -86,17 +121,24 @@ export interface Registration {
   status: "REGISTERED" | "CANCELLED" | "COMPLETED" | "NO_SHOW";
   registeredAt: string;
   cancelledAt?: string;
+  invitedBy?: UUID;
+  inviteStatus?: "PENDING" | "ACCEPTED" | "DECLINED";
 }
+
+export type AttendanceStatus = "CHECKED_IN" | "PIN_VERIFIED" | "ABSENT";
 
 export interface AttendanceRecord {
   id: UUID;
   registrationId: UUID;
   sessionId?: UUID;
   userId: UUID;
-  attendanceStatus: "CHECKED_IN" | "CHECKED_OUT" | "ABSENT";
+  activityId: UUID;
+  attendanceStatus: AttendanceStatus;
   verificationMethod: string;
-  verifiedAt?: string;
-  verifiedBy?: UUID;
+  checkedInAt?: string;
+  checkedInBy?: UUID;
+  pinVerifiedAt?: string;
+  createdAt: string;
 }
 
 export interface WalletTx {
@@ -110,18 +152,6 @@ export interface WalletTx {
   sourceId?: UUID;
   formulaVersion?: string;
   createdAt: string;
-}
-
-export interface Qualification {
-  id: UUID;
-  userId: UUID;
-  key: string;
-  sourceActivityId?: UUID;
-  sourceName?: string;
-  grantedAt: string;
-  expiresAt?: string;
-  status: "ACTIVE" | "REVOKED" | "EXPIRED";
-  revokedReason?: string;
 }
 
 export interface WorkoutLog {
@@ -140,7 +170,7 @@ export interface WorkoutLog {
   validationReason?: string;
   sportFactorUsed: number;
   sportFactorOriginal: number;
-  score: number; // POWER
+  power: number;
   formulaVersion: string;
   createdAt: string;
 }
@@ -156,9 +186,8 @@ export interface SportType {
 export interface ScoringRule {
   id: UUID;
   version: string;
-  sportFactorMultiplier: number; // base, overridden per sport
   specialEventMultiplier: number;
-  durationMultiplierPercent: number; // as percent e.g. 100
+  durationMultiplierPercent: number;
   isActive: boolean;
   effectiveFrom: string;
   effectiveTo?: string;
@@ -181,11 +210,16 @@ export interface Reward {
   name: string;
   description: string;
   imageUrl?: string;
+  rewardType: "REWARD" | "COUPON";
   pointCost: number;
   powerCost: number;
-  expCost: number;
   stock: number;
-  eligibilityRules: string[];
+  stockTotal: number;
+  minLevelId?: UUID;
+  requiredActivityId?: UUID;
+  merchantId?: UUID;
+  discountType?: string;
+  terms?: string;
   validFrom?: string;
   validTo?: string;
   status: "ACTIVE" | "INACTIVE";
@@ -198,7 +232,6 @@ export interface Redemption {
   userId: UUID;
   pointsSpent: number;
   powerSpent: number;
-  expSpent: number;
   status: "PENDING" | "FULFILLED" | "CANCELLED";
   voucherId?: UUID;
   redeemedAt: string;
@@ -207,19 +240,22 @@ export interface Redemption {
 export interface Voucher {
   id: UUID;
   redemptionId: UUID;
+  rewardId: UUID;
   userId: UUID;
   merchantId?: UUID;
   token: string;
   expiresAt: string;
   status: "ACTIVE" | "USED" | "EXPIRED" | "CANCELLED";
   usedAt?: string;
-  usedByMerchantId?: UUID;
+  verifiedByMerchantId?: UUID;
 }
 
 export interface Merchant {
   id: UUID;
   name: string;
   code: string;
+  email?: string;
+  phone?: string;
   isActive: boolean;
 }
 
@@ -232,6 +268,9 @@ export interface Community {
   createdAt: string;
   memberCount: number;
   groupPower: number;
+  status: "ACTIVE" | "DISSOLVED";
+  dissolvedAt?: string;
+  dissolvedReason?: string;
 }
 
 export interface CommunityMember {
@@ -268,6 +307,31 @@ export interface Certificate {
   revokedReason?: string;
 }
 
+export interface Quiz {
+  id: UUID;
+  title: string;
+  question: string;
+  choices: string[];
+  correctIndex: number;
+  pointReward: number;
+  expReward: number;
+  mode: "SINGLE_ATTEMPT" | "RETRY_UNTIL_CORRECT";
+  eligiblePersonnelTypes?: string[];
+  openAt?: string;
+  closeAt?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface QuizAnswer {
+  id: UUID;
+  quizId: UUID;
+  userId: UUID;
+  selectedIndex: number;
+  isCorrect: boolean;
+  answeredAt: string;
+}
+
 export interface Notification {
   id: UUID;
   userId: UUID;
@@ -291,14 +355,16 @@ export interface AuditLog {
 
 export interface Db {
   users: User[];
+  levels: Level[];
   organizations: Organization[];
   projects: Project[];
   activities: Activity[];
   sessions: ActivitySession[];
+  staffAssignments: StaffAssignment[];
   registrations: Registration[];
   attendance: AttendanceRecord[];
   walletTx: WalletTx[];
-  qualifications: Qualification[];
+  conversions: { id: UUID; userId: UUID; powerUsed: number; expGained: number; rate: number; createdAt: string }[];
   workouts: WorkoutLog[];
   sportTypes: SportType[];
   scoringRules: ScoringRule[];
@@ -311,11 +377,10 @@ export interface Db {
   communityMembers: CommunityMember[];
   communityPosts: CommunityPost[];
   certificates: Certificate[];
+  quizzes: Quiz[];
+  quizAnswers: QuizAnswer[];
   notifications: Notification[];
   auditLogs: AuditLog[];
-  passcodes: { id: UUID; activityId: UUID; code: string; expiresAt: string; createdBy: UUID; createdAt: string }[];
-  referralCampaigns: any[];
-  referralRecords: any[];
   systemSettings: Record<string, any>;
 }
 export default {};
