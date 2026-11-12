@@ -7,8 +7,6 @@ import QRCode from "react-qr-code";
 export default function WalletPage() {
   const { user, refresh } = useAuth();
   const [data, setData] = useState<any>(null);
-  const [convertAmt, setConvertAmt] = useState(0);
-  const [msg, setMsg] = useState("");
 
   const load = async () => {
     if (!user) return;
@@ -16,15 +14,6 @@ export default function WalletPage() {
     setData(d);
   };
   useEffect(() => { load(); }, [user]);
-
-  const convert = async () => {
-    try {
-      const r = await api("/api/wallet/convert", { method: "POST", body: JSON.stringify({ power: convertAmt }) });
-      setMsg(`แปลงสำเร็จ: ใช้ POWER ${r.powerUsed} → ได้ EXP ${r.expGained} (rate ${r.rate}:1) · POWER เหลือ ${r.remainingPower}`);
-      await load();
-      await refresh();
-    } catch (e: any) { setMsg(e.message); }
-  };
 
   if (!user) return <div className="text-center py-12 text-slate-500">กรุณาเข้าสู่ระบบ</div>;
   if (!data) return <div className="text-center py-12 text-slate-500">กำลังโหลด...</div>;
@@ -67,18 +56,7 @@ export default function WalletPage() {
         <div className="text-[10px] text-slate-400 font-mono break-all">{u.id}</div>
       </div>
 
-      {/* Convert */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3">
-        <h2 className="font-bold text-slate-800">แปลง POWER เป็น EXP</h2>
-        <p className="text-xs text-slate-500">อัตรา: 10 POWER = 1 EXP · EXP ต้องเป็นจำนวนเต็ม · POWER เศษคงเหลือ</p>
-        <div className="flex gap-2">
-          <input type="number" value={convertAmt} onChange={(e) => setConvertAmt(+e.target.value)} className="flex-1 border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="จำนวน POWER" />
-          <button onClick={convert} className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium shadow-sm hover:shadow-md transition btn-press">
-            แปลง
-          </button>
-        </div>
-        {msg && <div className="text-sm p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-700">{msg}</div>}
-      </div>
+      {/* Convert moved to Healthy Life page */}
 
       {/* Transaction history */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3">

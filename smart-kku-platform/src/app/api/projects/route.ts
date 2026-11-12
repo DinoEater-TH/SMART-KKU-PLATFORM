@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     id: uid(),
     orgId: body.orgId,
     orgName: db.organizations.find((o) => o.id === body.orgId)?.nameTh,
-    code: body.code,
+    code: body.code || `PRJ-${Date.now().toString(36).toUpperCase()}`,
     name: body.name,
     description: body.description || "",
     startDate: body.startDate,

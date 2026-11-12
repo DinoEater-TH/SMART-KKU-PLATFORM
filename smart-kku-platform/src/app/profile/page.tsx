@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import FileUpload from "@/components/FileUpload";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const { user, refresh } = useAuth();
@@ -39,6 +40,10 @@ export default function ProfilePage() {
         <FileUpload label="อัพโหลดรูปโปรไฟล์" onUploaded={setAvatarUrl} accept="image/*" />
         <button onClick={save} className="px-4 py-2 bg-blue-600 text-white rounded">บันทึก</button>
         {msg && <div className="text-sm text-green-700">{msg}</div>}
+        <div className="pt-3 border-t">
+          <p className="text-sm text-slate-500 mb-2">กระเป๋าคะแนน</p>
+          <Link href="/wallet" className="inline-block px-4 py-2 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-lg text-sm font-medium">เปิดกระเป๋าคะแนน</Link>
+        </div>
       </div>
     </div>
   );

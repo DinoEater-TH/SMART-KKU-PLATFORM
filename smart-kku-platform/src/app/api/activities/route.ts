@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     projectId: body.projectId,
     projectName: db.projects.find((p) => p.id === body.projectId)?.name,
     orgName: db.organizations.find((o) => o.id === db.projects.find((p) => p.id === body.projectId)?.orgId)?.nameTh,
-    code: body.code,
+    code: body.code || `ACT-${Date.now().toString(36).toUpperCase()}`,
     name: body.name,
     description: body.description || "",
     location: body.location,

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROLE_LABEL, PERSONNEL_TYPE_LABEL, ACTIVITY_TYPE_LABEL, VERIFICATION_METHOD_LABEL, label } from "@/lib/labels";
+import FileUpload from "@/components/FileUpload";
 
 type Tab =
   | "projects" | "activities" | "staff" | "levels" | "quizzes"
@@ -15,18 +16,18 @@ export default function AdminPage() {
   if (!user || !["SUPER_ADMIN", "DEPARTMENT_ADMIN"].includes(user.role)) return <div>สำหรับผู้ดูแลเท่านั้น</div>;
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "projects", label: "Projects" },
-    { id: "activities", label: "Activities" },
-    { id: "staff", label: "Staff Assignment" },
-    { id: "levels", label: "Levels" },
-    { id: "quizzes", label: "Quizzes" },
-    { id: "scoring", label: "Scoring Rules" },
-    { id: "sports", label: "Sport Types" },
-    { id: "settings", label: "Settings" },
-    { id: "users", label: "Users" },
-    { id: "players", label: "Player Management" },
-    { id: "analytics", label: "Analytics" },
-    { id: "audit", label: "Audit Logs" },
+    { id: "projects", label: "โครงการ" },
+    { id: "activities", label: "กิจกรรม" },
+    { id: "staff", label: "มอบหมาย Staff" },
+    { id: "levels", label: "ระดับ Level" },
+    { id: "quizzes", label: "แบบทดสอบ" },
+    { id: "scoring", label: "กฎการให้คะแนน" },
+    { id: "sports", label: "ประเภทกีฬา" },
+    { id: "settings", label: "ตั้งค่าระบบ" },
+    { id: "users", label: "ผู้ใช้" },
+    { id: "players", label: "จัดการผู้เล่น" },
+    { id: "analytics", label: "วิเคราะห์ข้อมูล" },
+    { id: "audit", label: "ประวัติการใช้งาน" },
   ];
 
   return (
@@ -71,8 +72,8 @@ function ProjectsTab() {
           <option value="">เลือกหน่วยงาน</option>
           {orgs.map((o) => <option key={o.id} value={o.id}>{o.nameTh}</option>)}
         </select>
-        <input placeholder="Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="border px-3 py-2 rounded w-full" />
-        <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border px-3 py-2 rounded w-full" />
+        <input placeholder="รหัสโครงการ (ไม่บังคับ)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="border px-3 py-2 rounded w-full" />
+        <input placeholder="ชื่อโครงการ" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border px-3 py-2 rounded w-full" />
         <input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="border px-3 py-2 rounded w-full" />
         <div className="grid grid-cols-2 gap-2">
           <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="border px-3 py-2 rounded" />
@@ -95,11 +96,11 @@ function ProjectsTab() {
 function ActivitiesTab() {
   const [activities, setActivities] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
-  const [form, setForm] = useState<any>({ projectId: "", code: "", name: "", description: "", location: "", activityType: "EVENT", capacity: 0, verificationMethod: "QR_PIN", pointReward: 0, expReward: 0, staffMultiplier: 1, pinCode: "1234", pinMode: "SHARED", allowInvite: false, hasCertificate: false });
+  const [form, setForm] = useState<any>({ projectId: "", code: "", name: "", description: "", location: "", bannerUrl: "", activityType: "EVENT", capacity: 0, verificationMethod: "QR_PIN", pointReward: 0, expReward: 0, staffMultiplier: 1, pinCode: "1234", pinMode: "SHARED", allowInvite: false, hasCertificate: false });
   useEffect(() => { api("/api/activities").then(setActivities); api("/api/projects").then(setProjects); }, []);
   const create = async () => {
     await api("/api/activities", { method: "POST", body: JSON.stringify(form) });
-    setForm({ projectId: "", code: "", name: "", description: "", location: "", activityType: "EVENT", capacity: 0, verificationMethod: "QR_PIN", pointReward: 0, expReward: 0, staffMultiplier: 1, pinCode: "1234", pinMode: "SHARED", allowInvite: false, hasCertificate: false });
+    setForm({ projectId: "", code: "", name: "", description: "", location: "", bannerUrl: "", activityType: "EVENT", capacity: 0, verificationMethod: "QR_PIN", pointReward: 0, expReward: 0, staffMultiplier: 1, pinCode: "1234", pinMode: "SHARED", allowInvite: false, hasCertificate: false });
     api("/api/activities").then(setActivities);
   };
   const settleAll = async (activityId: string) => {
@@ -118,11 +119,12 @@ function ActivitiesTab() {
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <div className="grid grid-cols-2 gap-2">
-          <input placeholder="Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="border px-3 py-2 rounded" />
-          <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border px-3 py-2 rounded" />
+          <input placeholder="รหัสกิจกรรม (ไม่บังคับ)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="border px-3 py-2 rounded" />
+          <input placeholder="ชื่อกิจกรรม" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border px-3 py-2 rounded" />
         </div>
         <input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="border px-3 py-2 rounded w-full" />
-        <input placeholder="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="border px-3 py-2 rounded w-full" />
+        <input placeholder="สถานที่" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="border px-3 py-2 rounded w-full" />
+        <FileUpload label="รูป Banner กิจกรรม" onUploaded={(url) => setForm({ ...form, bannerUrl: url })} accept="image/*" />
         <div className="grid grid-cols-3 gap-2">
           <select value={form.activityType} onChange={(e) => setForm({ ...form, activityType: e.target.value })} className="border px-3 py-2 rounded">
             <option value="EVENT">EVENT</option>
@@ -226,6 +228,8 @@ function StaffTab() {
 
 function LevelsTab() {
   const [levels, setLevels] = useState<any[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<any>({});
   const [form, setForm] = useState({ name: "", minExp: 0, maxExp: "", description: "", order: 0 });
   useEffect(() => { api("/api/levels").then(setLevels); }, []);
   const create = async () => {
@@ -256,16 +260,34 @@ function LevelsTab() {
       </div>
       <div className="bg-white p-4 rounded border">
         {levels.map((l) => (
+          editingId === l.id ? (
+            <div key={l.id} className="border-b py-3 text-sm space-y-2">
+              <input value={editValues.name} onChange={(e) => setEditValues({ ...editValues, name: e.target.value })} className="border px-3 py-2 rounded w-full" placeholder="ชื่อ" />
+              <div className="grid grid-cols-3 gap-2">
+                <input type="number" value={editValues.minExp} onChange={(e) => setEditValues({ ...editValues, minExp: +e.target.value })} className="border px-3 py-2 rounded" placeholder="Min EXP" />
+                <input value={editValues.maxExp} onChange={(e) => setEditValues({ ...editValues, maxExp: e.target.value })} className="border px-3 py-2 rounded" placeholder="Max EXP" />
+                <input type="number" value={editValues.order} onChange={(e) => setEditValues({ ...editValues, order: +e.target.value })} className="border px-3 py-2 rounded" placeholder="Order" />
+              </div>
+              <input value={editValues.description} onChange={(e) => setEditValues({ ...editValues, description: e.target.value })} className="border px-3 py-2 rounded w-full" placeholder="คำอธิบาย" />
+              <div className="flex gap-2">
+                <button onClick={async () => { await update(l.id, editValues); setEditingId(null); }} className="px-3 py-1 bg-green-600 text-white rounded text-xs">บันทึก</button>
+                <button onClick={() => setEditingId(null)} className="px-3 py-1 bg-gray-200 rounded text-xs">ยกเลิก</button>
+              </div>
+            </div>
+          ) : (
           <div key={l.id} className="border-b py-2 text-sm flex justify-between items-center">
             <div>
-              <div className="font-medium">{l.name} (order {l.order})</div>
+              <div className="font-medium">{l.name} (ลำดับ {l.order})</div>
               <div className="text-xs text-gray-500">EXP {l.minExp} - {l.maxExp ?? "∞"}</div>
             </div>
             <div className="flex gap-1">
-              <button onClick={() => update(l.id, { minExp: l.minExp + 100 })} className="text-xs px-2 py-1 bg-gray-200 rounded">+100 min</button>
+              <button onClick={() => update(l.id, { minExp: l.minExp - 100 })} className="text-xs px-2 py-1 bg-gray-200 rounded">-100</button>
+              <button onClick={() => update(l.id, { minExp: l.minExp + 100 })} className="text-xs px-2 py-1 bg-gray-200 rounded">+100</button>
+              <button onClick={() => { setEditingId(l.id); setEditValues({ name: l.name, minExp: l.minExp, maxExp: l.maxExp ?? "", description: l.description || "", order: l.order }); }} className="text-xs px-2 py-1 bg-blue-600 text-white rounded">แก้ไข</button>
               <button onClick={() => del(l.id)} className="text-xs px-2 py-1 bg-red-600 text-white rounded">ลบ</button>
             </div>
           </div>
+          )
         ))}
       </div>
     </div>
@@ -357,8 +379,8 @@ function SportsTab() {
       <div className="bg-white p-4 rounded border space-y-2">
         <h3 className="font-semibold">เพิ่มประเภทกีฬา</h3>
         <div className="grid grid-cols-3 gap-2">
-          <input placeholder="Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="border px-3 py-2 rounded" />
-          <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border px-3 py-2 rounded" />
+          <input placeholder="รหัสกีฬา (ไม่บังคับ)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="border px-3 py-2 rounded" />
+          <input placeholder="ชื่อกีฬา" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border px-3 py-2 rounded" />
           <input type="number" step="0.1" placeholder="Factor" value={form.factor} onChange={(e) => setForm({ ...form, factor: +e.target.value })} className="border px-3 py-2 rounded" />
         </div>
         <button onClick={create} className="px-4 py-2 bg-blue-600 text-white rounded">เพิ่ม</button>

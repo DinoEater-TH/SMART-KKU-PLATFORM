@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { WORKOUT_STATUS_LABEL, label } from "@/lib/labels";
 
 export default function HealthyLifePage() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [sportTypes, setSportTypes] = useState<any[]>([]);
   const [seasons, setSeasons] = useState<any[]>([]);
@@ -23,6 +23,8 @@ export default function HealthyLifePage() {
     durationMultiplierPercent: 100,
   });
   const [msg, setMsg] = useState("");
+  const [convertAmt, setConvertAmt] = useState(0);
+  const [convertMsg, setConvertMsg] = useState("");
 
   const load = async () => {
     const st = await api("/api/sport-types");
@@ -63,6 +65,15 @@ export default function HealthyLifePage() {
     } catch (e: any) {
       setMsg(e.message);
     }
+  };
+
+  const convert = async () => {
+    try {
+      const r = await api("/api/wallet/convert", { method: "POST", body: JSON.stringify({ power: convertAmt }) });
+      setConvertMsg(`แปลงสำเร็จ: ใช้ POWER ${r.powerUsed} → ได้ EXP ${r.expGained} (rate ${r.rate}:1) · POWER เหลือ ${r.remainingPower}`);
+      await load();
+      await refresh();
+    } catch (e: any) { setConvertMsg(e.message); }
   };
 
   const totalCalories = workouts.reduce((s, w) => s + w.calories, 0);
@@ -120,13 +131,25 @@ export default function HealthyLifePage() {
                 </div>
               </div>
               <div>
-                <label className="text-sm">แหล่งที่มา</label>
-                <select value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} className="border px-3 py-2 rounded w-full">
-                  <option value="MANUAL">กรอกเอง</option>
-                  <option value="STRAVA">Strava</option>
-                  <option value="GARMIN">Garmin</option>
-                  <option value="SMARTWATCH">Smartwatch</option>
-                </select>
+                <label className="text-sm">แหล่งที่มา (กดเพื่อ sync)</label>
+                <div className="grid grid-cols-4 gap-2 mt-1">
+                  {[
+                    { value: "MANUAL", label: "กรอกเอง", icon: "✏️" },
+                    { value: "STRAVA", label: "Strava", icon: "🏃" },
+                    { value: "GARMIN", label: "Garmin", icon: "⌚" },
+                    { value: "SMARTWATCH", label: "Smartwatch", icon: "📱" },
+                  ].map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setForm({ ...form, source: s.value })}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-xs transition ${form.source === s.value ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 hover:bg-slate-50"}`}
+                    >
+                      <span className="text-lg">{s.icon}</span>
+                      <span>{s.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
               <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">ส่งผล</button>
             </form>
@@ -149,6 +172,20 @@ export default function HealthyLifePage() {
           </div>
         </div>
       </div>
+
+      {user && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3">
+          <h2 className="font-bold text-slate-800">แปลง POWER เป็น EXP</h2>
+          <p className="text-xs text-slate-500">อัตรา: 10 POWER = 1 EXP · EXP ต้องเป็นจำนวนเต็ม · POWER เศษคงเหลือ</p>
+          <div className="flex gap-2">
+            <input type="number" value={convertAmt} onChange={(e) => setConvertAmt(+e.target.value)} className="flex-1 border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="จำนวน POWER" />
+            <button onClick={convert} className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium shadow-sm hover:shadow-md transition btn-press">
+              แปลง
+            </button>
+          </div>
+          {convertMsg && <div className="text-sm p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-700">{convertMsg}</div>}
+        </div>
+      )}
 
       {user && (
         <div className="bg-white p-5 rounded border space-y-3">

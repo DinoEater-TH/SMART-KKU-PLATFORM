@@ -84,6 +84,11 @@ export default function ActivityDetailPage() {
 
   return (
     <div className="space-y-4">
+      {activity.bannerUrl && (
+        <div className="rounded-2xl overflow-hidden">
+          <img src={activity.bannerUrl} alt={activity.name} className="w-full h-48 md:h-64 object-cover" />
+        </div>
+      )}
       <h1 className="text-2xl font-bold">{activity.name}</h1>
       <p className="text-gray-600">{activity.description}</p>
       <div className="bg-white p-4 rounded border text-sm space-y-1">

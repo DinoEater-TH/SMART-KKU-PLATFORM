@@ -12,7 +12,6 @@ export default function Navbar() {
     { href: "/", label: "หน้าหลัก", icon: "🏠" },
     { href: "/activities", label: "กิจกรรม", icon: "📅" },
     { href: "/healthy-life", label: "สุขภาพ", icon: "💪" },
-    { href: "/wallet", label: "กระเป๋า", icon: "💰" },
     { href: "/marketplace", label: "รางวัล", icon: "🎁" },
   ];
 
