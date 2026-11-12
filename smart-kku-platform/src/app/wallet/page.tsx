@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import QRCode from "react-qr-code";
 
 export default function WalletPage() {
   const { user, refresh } = useAuth();
@@ -50,9 +51,13 @@ export default function WalletPage() {
         {msg && <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">{msg}</div>}
       </div>
 
-      <div className="bg-white p-5 rounded border space-y-2">
-        <h2 className="font-semibold">Level</h2>
-        <div className="text-sm">Level ปัจจุบัน: <b>{u.levelName}</b> · EXP {u.exp}</div>
+      <div className="bg-white p-5 rounded border space-y-3 text-center">
+        <h2 className="font-semibold">QR Code ของฉัน (สำหรับเช็กอินกิจกรรม)</h2>
+        <div className="flex justify-center">
+          <QRCode value={u.id} size={180} />
+        </div>
+        <div className="text-xs text-gray-500 font-mono break-all">{u.id}</div>
+        <div className="text-xs text-gray-500">ให้ Staff สแกน QR นี้เพื่อเช็กอินกิจกรรม</div>
       </div>
 
       <div className="bg-white p-5 rounded border space-y-2">

@@ -100,6 +100,7 @@ export async function POST(req: Request) {
   }
 
   db.redemptions.push(redemption as any);
+  db.notifications.push({ id: uid(), userId: user.id, title: "แลกรางวัลสำเร็จ", body: `คุณแลก ${reward.name} สำเร็จ`, type: "REDEMPTION", isRead: false, createdAt: now() } as any);
   audit(db, user.id, "REDEEM", "Reward", reward.id, reward.name);
   writeDb(db);
   return NextResponse.json({ redemption, voucher });

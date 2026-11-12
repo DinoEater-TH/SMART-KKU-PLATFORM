@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900`}>
         <AuthProvider>
           <Navbar />
-          <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+          <main className="max-w-6xl mx-auto px-4 py-6 pb-20 md:pb-6">{children}</main>
         </AuthProvider>
       </body>
     </html>
