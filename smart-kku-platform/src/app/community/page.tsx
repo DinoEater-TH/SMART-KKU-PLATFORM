@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { COMMUNITY_STATUS_LABEL, label } from "@/lib/labels";
 
 export default function CommunityPage() {
   const { user, refresh } = useAuth();
@@ -63,7 +64,7 @@ export default function CommunityPage() {
                 <div>
                   <h3 className="font-semibold text-lg">{c.name}</h3>
                   <p className="text-sm text-gray-600">{c.description}</p>
-                  <div className="text-xs text-gray-500 mt-1">เจ้าของ: {c.ownerName} · สมาชิก: {c.memberCount} · Group Power: {c.groupPower} {c.status === "DISSOLVED" && <span className="text-red-600">· DISSOLVED: {c.dissolvedReason}</span>}</div>
+                  <div className="text-xs text-gray-500 mt-1">เจ้าของ: {c.ownerName} · สมาชิก: {c.memberCount} · Group Power: {c.groupPower} {c.status === "DISSOLVED" && <span className="text-red-600">· {label(COMMUNITY_STATUS_LABEL, c.status)}: {c.dissolvedReason}</span>}</div>
                 </div>
                 {user && (
                   <div>

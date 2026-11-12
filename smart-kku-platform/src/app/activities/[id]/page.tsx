@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { VERIFICATION_METHOD_LABEL, ACTIVITY_TYPE_LABEL, ACTIVITY_STATUS_LABEL, REGISTRATION_STATUS_LABEL, ATTENDANCE_STATUS_LABEL, label } from "@/lib/labels";
 
 export default function ActivityDetailPage() {
   const params = useParams();
@@ -89,10 +90,10 @@ export default function ActivityDetailPage() {
         <div>หน่วยงาน: {activity.orgName}</div>
         <div>โครงการ: {activity.projectName}</div>
         <div>สถานที่: {activity.location}</div>
-        <div>ประเภท: {activity.activityType}</div>
-        <div>วิธีเช็กอิน: {activity.verificationMethod}</div>
+        <div>ประเภท: {label(ACTIVITY_TYPE_LABEL, activity.activityType)}</div>
+        <div>วิธีเช็กอิน: {label(VERIFICATION_METHOD_LABEL, activity.verificationMethod)}</div>
         <div>รับ: {activity.capacity === 0 ? "ไม่จำกัด" : activity.capacity}</div>
-        <div>สถานะ: {activity.status}</div>
+        <div>สถานะ: {label(ACTIVITY_STATUS_LABEL, activity.status)}</div>
         <div>รางวัล: POINT +{activity.pointReward} · EXP +{activity.expReward} · ตัวคูณ Staff: {activity.staffMultiplier}x</div>
         {activity.hasCertificate && <div className="text-blue-700">Certificate</div>}
         {activity.allowInvite && <div className="text-green-700">อนุญาตให้เชิญผู้เล่น</div>}

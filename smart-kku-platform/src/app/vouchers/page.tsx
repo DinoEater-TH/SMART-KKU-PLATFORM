@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import { VOUCHER_STATUS_LABEL, label } from "@/lib/labels";
 
 export default function VouchersPage() {
   const { user } = useAuth();
@@ -25,7 +26,7 @@ export default function VouchersPage() {
               <div className="font-mono text-sm">{v.token.slice(0, 12)}...</div>
               <div className="text-xs text-gray-500">หมดอายุ {new Date(v.expiresAt).toLocaleString("th-TH")} · {v.status}</div>
             </div>
-            <span className={`text-xs px-2 py-1 rounded ${v.status === "ACTIVE" ? "bg-green-100 text-green-700" : "bg-gray-100"}`}>{v.status}</span>
+            <span className={`text-xs px-2 py-1 rounded ${v.status === "ACTIVE" ? "bg-green-100 text-green-700" : "bg-gray-100"}`}>{label(VOUCHER_STATUS_LABEL, v.status)}</span>
           </Link>
         ))}
       </div>

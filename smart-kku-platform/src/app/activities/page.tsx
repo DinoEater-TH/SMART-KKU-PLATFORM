@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import { ACTIVITY_TYPE_LABEL, VERIFICATION_METHOD_LABEL, label } from "@/lib/labels";
 
 export default function ActivitiesPage() {
   const { user } = useAuth();
@@ -56,8 +57,8 @@ export default function ActivitiesPage() {
               </div>
 
               <div className="flex flex-wrap gap-1.5">
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${methodBadge(a.verificationMethod)}`}>{a.verificationMethod}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{a.activityType}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${methodBadge(a.verificationMethod)}`}>{label(VERIFICATION_METHOD_LABEL, a.verificationMethod)}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{label(ACTIVITY_TYPE_LABEL, a.activityType)}</span>
                 {a.allowInvite && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">เชิญได้</span>}
               </div>
 

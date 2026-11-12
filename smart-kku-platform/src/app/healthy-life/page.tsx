@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { WORKOUT_STATUS_LABEL, label } from "@/lib/labels";
 
 export default function HealthyLifePage() {
   const { user } = useAuth();
@@ -166,7 +167,7 @@ export default function HealthyLifePage() {
                     <td>{w.paceMinPerKm ? w.paceMinPerKm.toFixed(2) : "-"}</td>
                     <td>{w.sportFactorUsed}</td>
                     <td className="text-green-700 font-mono">{w.score}</td>
-                    <td>{w.status}</td>
+                    <td>{label(WORKOUT_STATUS_LABEL, w.status)}</td>
                   </tr>
                 ))}
               </tbody>

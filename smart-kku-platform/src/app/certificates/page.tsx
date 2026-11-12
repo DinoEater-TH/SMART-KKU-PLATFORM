@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import html2canvas from "html2canvas";
+import { CERTIFICATE_STATUS_LABEL, label } from "@/lib/labels";
 
 export default function CertificatesPage() {
   const { user } = useAuth();
@@ -35,7 +36,7 @@ export default function CertificatesPage() {
           <div key={c.id} className="bg-white p-5 rounded border space-y-1">
             <div className="font-semibold">{c.activityName}</div>
             <div className="text-sm text-gray-600">เลขที่: {c.certificateNo} · หน่วยงาน: {c.orgName}</div>
-            <div className="text-xs text-gray-500">ออกเมื่อ {new Date(c.issuedAt).toLocaleString()} · สถานะ {c.status}</div>
+            <div className="text-xs text-gray-500">ออกเมื่อ {new Date(c.issuedAt).toLocaleString()} · สถานะ {label(CERTIFICATE_STATUS_LABEL, c.status)}</div>
             <button onClick={() => setSelected(c)} className="text-sm px-3 py-1 bg-blue-600 text-white rounded mt-2">ดู/ดาวน์โหลด</button>
           </div>
         ))}

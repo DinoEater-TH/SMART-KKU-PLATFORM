@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { ROLE_LABEL, PERSONNEL_TYPE_LABEL, ACTIVITY_TYPE_LABEL, VERIFICATION_METHOD_LABEL, label } from "@/lib/labels";
 
 type Tab =
   | "projects" | "activities" | "staff" | "levels" | "quizzes"
@@ -156,7 +157,7 @@ function ActivitiesTab() {
           <div key={a.id} className="border-b py-2 text-sm flex justify-between items-center">
             <div>
               <div className="font-medium">{a.name} ({a.code})</div>
-              <div className="text-xs text-gray-500">{a.projectName} · {a.verificationMethod} · cap {a.capacity === 0 ? "∞" : a.capacity} · +{a.pointReward}P +{a.expReward}EXP · staff×{a.staffMultiplier}</div>
+              <div className="text-xs text-gray-500">{a.projectName} · {label(VERIFICATION_METHOD_LABEL, a.verificationMethod)} · cap {a.capacity === 0 ? "∞" : a.capacity} · +{a.pointReward}P +{a.expReward}EXP · staff×{a.staffMultiplier}</div>
             </div>
             <button onClick={() => settleAll(a.id)} className="text-xs px-2 py-1 bg-purple-600 text-white rounded">Settle Staff</button>
           </div>
@@ -414,7 +415,7 @@ function UsersTab() {
             <div className="text-xs text-gray-500">{u.email} · {u.orgName} · {u.levelName}</div>
           </div>
           <select value={u.role} onChange={(e) => changeRole(u.id, e.target.value)} className="border px-2 py-1 rounded text-sm">
-            {["USER", "STAFF", "DEPARTMENT_ADMIN", "SUPER_ADMIN", "MERCHANT"].map((r) => <option key={r} value={r}>{r}</option>)}
+            {["USER", "STAFF", "DEPARTMENT_ADMIN", "SUPER_ADMIN", "MERCHANT"].map((r) => <option key={r} value={r}>{label(ROLE_LABEL, r)}</option>)}
           </select>
         </div>
       ))}
@@ -440,7 +441,7 @@ function PlayersTab() {
         {users.map((u) => (
           <button key={u.id} onClick={() => loadDetail(u)} className="w-full text-left border-b py-2 text-sm hover:bg-gray-50">
             <div className="font-medium">{u.displayName}</div>
-            <div className="text-xs text-gray-500">{u.email} · {u.personnelType} · {u.levelName} · {u.points}P/{u.power}PW/{u.exp}EXP</div>
+            <div className="text-xs text-gray-500">{u.email} · {label(PERSONNEL_TYPE_LABEL, u.personnelType)} · {u.levelName} · {u.points}P/{u.power}PW/{u.exp}EXP</div>
           </button>
         ))}
       </div>
