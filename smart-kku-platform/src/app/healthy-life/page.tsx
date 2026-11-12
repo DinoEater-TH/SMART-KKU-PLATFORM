@@ -17,7 +17,7 @@ export default function HealthyLifePage() {
     sportTypeCode: "RUNNING",
     calories: 300,
     durationSec: 1800,
-    distanceKm: 5,
+    distanceKm: 0,
     source: "MANUAL",
     specialEventMultiplier: 1,
     durationMultiplierPercent: 100,
@@ -117,27 +117,14 @@ export default function HealthyLifePage() {
                 </div>
               </div>
               <div>
-                <label className="text-sm">ระยะทาง (km)</label>
-                <input type="number" step="0.1" value={form.distanceKm} onChange={(e) => setForm({ ...form, distanceKm: +e.target.value })} className="border px-3 py-2 rounded w-full" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm">Special Event Multiplier</label>
-                  <input type="number" step="0.1" value={form.specialEventMultiplier} onChange={(e) => setForm({ ...form, specialEventMultiplier: +e.target.value })} className="border px-3 py-2 rounded w-full" />
-                </div>
-                <div>
-                  <label className="text-sm">Duration Multiplier (%)</label>
-                  <input type="number" value={form.durationMultiplierPercent} onChange={(e) => setForm({ ...form, durationMultiplierPercent: +e.target.value })} className="border px-3 py-2 rounded w-full" />
-                </div>
-              </div>
-              <div>
                 <label className="text-sm">แหล่งที่มา (กดเพื่อ sync)</label>
                 <div className="grid grid-cols-4 gap-2 mt-1">
                   {[
-                    { value: "MANUAL", label: "กรอกเอง", icon: "✏️" },
-                    { value: "STRAVA", label: "Strava", icon: "🏃" },
-                    { value: "GARMIN", label: "Garmin", icon: "⌚" },
-                    { value: "SMARTWATCH", label: "Smartwatch", icon: "📱" },
+                    { value: "MANUAL", label: "กรอกเอง", icon: "✏️", note: "" },
+                    { value: "GOOGLE_FIT", label: "Google Fit", icon: "📱", note: "เชื่อมต่อ Google Fit API" },
+                    { value: "APPLE_HEALTH", label: "Apple Health", icon: "🍎", note: "เชื่อมต่อ Apple Health API" },
+                    { value: "STRAVA", label: "Strava", icon: "🏃", note: "" },
+                    { value: "GARMIN", label: "Garmin", icon: "⌚", note: "" },
                   ].map((s) => (
                     <button
                       key={s.value}
@@ -147,6 +134,7 @@ export default function HealthyLifePage() {
                     >
                       <span className="text-lg">{s.icon}</span>
                       <span>{s.label}</span>
+                      {s.note && <span className="text-[9px] text-slate-400">{s.note}</span>}
                     </button>
                   ))}
                 </div>
